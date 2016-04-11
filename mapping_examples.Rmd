@@ -1,0 +1,557 @@
+---
+title: "Mapping examples"
+author: Francesco Bailo
+date: "11 April 2016"
+output:
+  html_document:
+    self_contained: no
+    theme: united
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE, cache = TRUE)
+require(ggplot2)
+require(gridExtra)
+require(scales)
+theme_set(theme_bw() + 
+             theme(text=element_text(family="Palatino", size=10)) +
+            #eliminates background, gridlines, and chart border
+            theme(
+                plot.background = element_blank()
+               ,panel.grid.major = element_blank()
+               ,panel.grid.minor = element_blank()
+               ,panel.border = element_blank()) +
+            theme(axis.line = element_line(color = 'black')))
+
+extractLegend <- function(a.gplot) {
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+date_format <- "%d %B %Y"
+
+require(xtable)
+require(scales)
+
+require(ineq)
+require(data.table)
+require(reshape2)
+require(RColorBrewer)
+require(lattice)
+require(directlabels)
+require(countrycode)
+require(stringr)
+require(plyr)
+require(jsonlite)
+require(stargazer)
+require(XLConnect)
+require(RColorBrewer)
+require(rgdal)
+require(MASS)
+```
+
+
+# Five Star Movemement
+
+- **Software** Python, R, QGIS
+
+- **Source** [meetup.com/meetup_api](http://www.meetup.com/meetup_api/), [istat.it](http://www.istat.it/), [elezioni.interno.it/opendata.html](http://elezioni.interno.it/opendata.html)
+
+- **API Parsing script** [github.com/fraba/meetup_api_python](https://github.com/fraba/meetup_api_python)
+
+- **File format** JSON, CSV
+
+- **Meetup user records** 97,808
+
+- **Municipalities records** 8072
+
+- **Voting records** 90,096 (Number of votes by municipality and party)
+
+- **Geolocated people for density analysis** 59,394,207
+
+- **Geolocated votes for density analysis** 27,371,747
+
+By comparing the data on the distribution of the resident population in Italy and the number of members added by the Five Star Movement to its meetups in four periods, we can visualise where and when membership grew faster than expected given the density of the resident population in that area. In the figures below, each dot represents a member who registered on Meetup.com in that period. The association between membership and the resident population is indicated in red if the number of members in that area is higher than expected, blue if lower than expected and white if as expected given the density of the population in the same area. 
+
+```{r, fig.height=10, fig.width=8}
+italy <- readOGR(dsn = "/Users/francesco/Desktop/GIS_Data/Administrative units/Italy/ITA_adm/", layer = "ITA_adm1_simp", verbose=FALSE)
+
+italy_box_y <- c(36, 47.5)
+italy_box_x <- c(6.1, 19.5)
+
+one_point_k_people <- read.csv("~/Desktop/GIS_Data/Population/Italy/ISTAT/one_point_k_people.csv")
+
+load("~/Desktop/r_work_directory/m5s_meetup_user_aug14_wt_gender.RData")
+
+years <- as.Date(c("2005-01-01","2006-01-01","2009-01-01","2012-01-01","2015-01-01"))
+
+users <- list()
+
+for (i in 2:length(years)) {
+  users[[i-1]] <- subset(meetup_user, as.Date(joined) < years[i] &
+                         as.Date(joined) >= years[i-1])
+}
+
+for (i in 2:length(years)) {
+  # Calculate the 2d density estimate over the common range
+d1 = kde2d(users[[i-1]]$lon, users[[i-1]]$lat, lims=c(italy_box_x, italy_box_y), n=200)
+d2 = kde2d(one_point_k_people$lon, one_point_k_people$lat, lims=c(italy_box_x, italy_box_y), n=200)
+
+# Confirm that the grid points for each density estimate are identical
+# identical(d1$x, d2$x) # TRUE
+# identical(d1$y, d2$y) # TRUE
+
+# Calculate the difference between the 2d density estimates
+diff12 = d1 
+diff12$z = d2$z - d1$z
+
+## Melt data into long format
+# First, add row and column names (x and y grid values) to the z-value matrix
+rownames(diff12$z) = diff12$x
+colnames(diff12$z) = diff12$y
+
+# Now melt it to long format
+diff12.m = melt(diff12$z, id.var=rownames(diff12))
+names(diff12.m) = c("Lon","Lat","z")
+
+# Plot difference between geyser2 and geyser1 density
+plot <- 
+  ggplot() +
+  geom_tile(data=diff12.m, aes(Lon, Lat, z=z, fill=z)) +
+  stat_contour(aes(colour=..level..), binwidth=0.001) +
+  scale_fill_gradient2(low="blue",mid="white", high="red", midpoint=0) +
+  scale_colour_gradient2(low=muted("blue"), mid="white", high=muted("red"), midpoint=0) +
+  geom_polygon(data=italy, aes(x=long, y=lat, group=group), fill=NA, colour="black", size=.2) +
+  coord_cartesian(xlim=italy_box_x, ylim= italy_box_y) +
+  labs(title=paste0(format(years[i-1], "%Y"),"-",format(years[i], "%Y"))) +
+  guides(colour=FALSE) +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="none",
+        panel.background=element_rect(fill = 'white'),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        plot.background=element_blank(),
+        plot.margin = unit(c(0,0,0,0), "cm")) +
+  geom_point(data=users[[i-1]], aes(lon, lat), size=.2, position="jitter")
+
+  assign(paste0("p",format(years[i],"%Y")),plot)
+}
+
+grid.arrange(p2006,p2009,p2012,p2015, ncol=2, nrow=2)
+```
+
+In the map below we compare the density of the membership of the Five Star Movement, with the density of the votes the movement received in the 2014 European Parliament election. This time each dot represents 1000 votes casted for the Five Star Movements. The number of members did not translate in a proportional number of votes in all the major cities (which of course attract the highest number of members) with the notable exception of Turin.
+
+
+```{r, fig.height=10, fig.width=8}
+circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
+    r = diameter / 2
+    tt <- seq(0,2*pi,length.out = npoints)
+    xx <- center[1] + r * cos(tt)
+    yy <- center[2] + r * sin(tt)
+    return(data.frame(x = xx, y = yy))
+}
+# Match election results with comune code
+# europee2014 <- read.csv("~/Dropbox/Thesis_PhD/data/risultati_europee_2014/scrutiniE.csv", sep=";")
+# comuni <- read.csv("~/Desktop/GIS_Data/Population/Italy/ISTAT/dati/comuni.csv")
+# 
+# trim <- function (x) gsub("^\\s+|\\s+$", "", x)
+# 
+# comuni$match <- gsub("è","e", comuni$Descrizione.Comune)
+# comuni$match <- gsub("é","e", comuni$match)
+# comuni$match <- gsub("ì","i", comuni$match)
+# comuni$match <- gsub("ò","o", comuni$match)
+# comuni$match <- gsub("à","a", comuni$match)
+# comuni$match <- gsub("ù","u", comuni$match)
+# comuni$match <- gsub("'"," ", comuni$match)
+# comuni$match <- gsub("'"," ", comuni$match)
+# comuni$match <- trim(comuni$match)
+# comuni$match <- tolower(comuni$match)
+# 
+# comuni <- comuni[!(duplicated(comuni$match) | duplicated(comuni$match, fromLast = TRUE)),]
+# 
+# europee2014$match <- gsub("'"," ", europee2014$DESCCOMUNE)
+# europee2014$match <- gsub("  "," ", europee2014$match)
+# europee2014$match <- trim(europee2014$match)
+# europee2014$match <- tolower(europee2014$match)
+# 
+# dup_check <- unique(data.frame(name= europee2014$match,
+#                         wt_province = paste0(europee2014$match, " ", europee2014$DESCPROVINCIA)))
+# 
+# europee2014 <- europee2014[!(europee2014$match %in% dup_check$name[duplicated(dup_check$name)]),]
+# 
+# europee2014.merged <- merge(europee2014, comuni, by="match", all.x=TRUE, all.y=FALSE)
+# 
+# europee2014.m5s <- aggregate(NUMVOTI ~ Codice.Comune, data=subset(europee2014.merged, CCP==3677), FUN="sum")
+# europee2014.tot_votes <- aggregate(NUMVOTI ~ Codice.Comune, data=europee2014.merged, FUN="sum")
+# 
+# roundVotes <- function (x) {
+#   k <- round(x/1000,digits=0)
+#   if (k==0) {
+#     k <- rbinom(1,1,x/1000)
+#   }
+#   return(k)
+# }
+# 
+# europee2014.m5s$k <- sapply(europee2014.m5s$NUMVOTI, roundVotes)
+# europee2014.tot_votes$k <- sapply(europee2014.tot_votes$NUMVOTI, roundVotes)
+# 
+# write.csv(europee2014.m5s, "~/Dropbox/Thesis_PhD/data/risultati_europee_2014/m5s_votes.csv")
+# write.csv(europee2014.tot_votes, "~/Dropbox/Thesis_PhD/data/risultati_europee_2014/tot_votes.csv")
+
+## HERE QGIS
+
+tot_votes_point <- read.csv("~/Dropbox/Thesis_PhD/data/risultati_europee_2014/tot_votes_point.csv")
+m5s_votes_point <- read.csv("~/Dropbox/Thesis_PhD/data/risultati_europee_2014/m5s_votes_point.csv")
+
+# Calculate the 2d density estimate over the common range
+d1 = kde2d(meetup_user$lon, meetup_user$lat, lims=c(italy_box_x, italy_box_y), n=200)
+d2 = kde2d(m5s_votes_point$lon, m5s_votes_point$lat, lims=c(italy_box_x, italy_box_y), n=200)
+
+# Confirm that the grid points for each density estimate are identical
+# identical(d1$x, d2$x) # TRUE
+# identical(d1$y, d2$y) # TRUE
+
+# Calculate the difference between the 2d density estimates
+diff12 = d1 
+diff12$z = d2$z - d1$z
+
+## Melt data into long format
+# First, add row and column names (x and y grid values) to the z-value matrix
+rownames(diff12$z) = diff12$x
+colnames(diff12$z) = diff12$y
+
+# Now melt it to long format
+diff12.m = melt(diff12$z, id.var=rownames(diff12))
+names(diff12.m) = c("Lon","Lat","z")
+
+turin <- circleFun(c(7.7000, 45.0667),.6, npoints = 100)
+
+# Plot difference between geyser2 and geyser1 density
+ggplot() +
+  geom_tile(data=diff12.m, aes(Lon, Lat, z=z, fill=z)) +
+  stat_contour(aes(colour=..level..), binwidth=0.001) +
+  scale_fill_gradient2(low="blue",mid="white", high="red", midpoint=0) +
+  scale_colour_gradient2(low=muted("blue"), mid="white", high=muted("red"), midpoint=0) +
+  geom_polygon(data=italy, aes(x=long, y=lat, group=group), fill=NA, colour="black", size=.2) +
+  coord_cartesian(xlim=italy_box_x, ylim= italy_box_y) +
+  guides(colour=FALSE) +
+    theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="none",
+        panel.background=element_rect(fill = 'white'),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        plot.background=element_blank(),
+        plot.margin = unit(c(0,0,0,0), "cm")) +
+  geom_point(data=m5s_votes_point, aes(lon, lat), size=.4, position="jitter") +
+  geom_path(data=turin, aes(x=x,y=y), size=.3) +
+  geom_text(aes(7.7000, 45.0667, label="Turin"), family="Palatino",
+            hjust=1.8, vjust=-1.5, size=4)
+```
+
+# Kiva.org dataset
+
+```{r}
+load("~/Desktop/r_work_directory/kiva/snapshot_sum_stats_Oct_2014.RData")
+```
+
+- **Software** Python, SQLite, R, QGIS
+
+- **Source** [build.kiva.org](http://build.kiva.org/)
+
+- **File format** JSON
+
+- **Processing script** [github.com/fraba/Kiva-JSON-Snapshot-to-SQLite](https://github.com/fraba/Kiva-JSON-Snapshot-to-SQLite)
+
+- **Loan records** `r prettyNum(snapshot_sum_stats$loan$nrow, big.mark=",", scientific=FALSE)`
+  
+- **Location records** `r prettyNum(snapshot_sum_stats$location$nrow,big.mark=",",scientific=FALSE)`
+   
+- **Lender records** `r prettyNum(snapshot_sum_stats$lender$nrow,big.mark=",",scientific=FALSE)`
+   
+- **Loan-lender relation records** `r prettyNum(snapshot_sum_stats$loan_lender$nrow,big.mark=",",scientific=FALSE)`
+
+Where are the \num{25363} Australian lenders? 
+
+```{R, fig.height=7, fig.width=10}
+circleFun <- function(center = c(0,0),diameter = 1, npoints = 100){
+    r = diameter / 2
+    tt <- seq(0,2*pi,length.out = npoints)
+    xx <- center[1] + r * cos(tt)
+    yy <- center[2] + r * sin(tt)
+    return(data.frame(x = xx, y = yy))
+}
+
+load("~/Documents/ex_dropbox/Kiva Research/anu_feb_2015/data/lender_aus_wt_ra_lga.RData")
+require(rgdal)
+require(grid)
+australia <- readOGR("/Users/francesco/Desktop/GIS_Data/Administrative units/Australia/AUS_simplify/AUS_simplify_adm1.shp", layer="AUS_simplify_adm1",verbose=FALSE)
+australia_box_y <- c(-44, -9)
+australia_box_x <- c(112, 156)
+aus_map <- ggplot() +  geom_polygon(data=australia, aes(x=long, y=lat, group=group), fill="antiquewhite1", colour="gray", size=.1) + coord_cartesian(xlim = australia_box_x, ylim = australia_box_y ) +
+  theme(axis.line=element_blank(),
+        axis.text.x=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),
+        legend.position="none",
+        panel.background=element_rect(fill = 'white'),
+        panel.border=element_blank(),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        plot.background=element_blank(),
+        plot.margin = unit(c(0,0,0,0), "cm"))
+
+perth <- circleFun(c(115.8589, -31.9522),2.3, npoints = 100)
+sydney <- circleFun(c(151.2094, -33.8600),2.3, npoints = 100)
+melbourne <- circleFun(c(144.9631, -37.8136),2.3, npoints = 100)
+brisbane <- circleFun(c(153.0278, -27.4679),2.3, npoints = 100)
+adelaide <- circleFun(c(138.6010, -34.9290),2.3, npoints = 100)
+
+aus_map + 
+  geom_point(data=lender_aus, aes(x=lon, y=lat), size=0.3, colour="black") +
+stat_density2d(data=lender_aus, aes(x=lon, y=lat, fill=..level..,
+                                    alpha=..level..),
+               geom="polygon", bins = 10) +
+  scale_fill_gradient (na.value ="white", low = "yellow", high = "red") +
+  geom_path(data=perth, aes(x=x,y=y), alpha=.5, size=.2) +
+  geom_path(data=sydney, aes(x=x,y=y), alpha=.5, size=.2) +
+  geom_path(data=melbourne, aes(x=x,y=y), alpha=.5, size=.2) +
+  geom_path(data=adelaide, aes(x=x,y=y), alpha=.5, size=.2) +
+  geom_path(data=brisbane, aes(x=x,y=y), alpha=.5, size=.2) +
+  geom_text(aes(115.8589, -31.9522, label="Perth"), family="Palatino",
+            hjust=2, vjust=2, size=2) +
+  geom_text(aes(138.6010, -34.9290, label="Adelaide"), family="Palatino",
+            hjust=1, vjust=4, size=2) +
+  geom_text(aes(151.2094, -33.8600, label="Sydney"), family="Palatino",
+            hjust=-.03, vjust=4, size=2) +
+  geom_text(aes(144.9631, -37.8136, label="Melbourne"), family="Palatino",
+            hjust=1, vjust=4, size=2) +
+  geom_text(aes(153.0278, -27.4679, label="Brisbane"), family="Palatino",
+            hjust=1.7, vjust=-.9, size=2)
+```
+
+
+```{r}
+require(XLConnect)
+require(countrycode)
+require(RColorBrewer)
+require(reshape2)
+
+df <- readWorksheetFromFile("~/Documents/ex_dropbox/Kiva Research/anu_feb_2015/data/AusAid_DataAnalysis 2015 01 31.xlsx", sheet="country")
+
+df[is.na(df)] <- 0
+
+df$region <- countrycode(df$Country.Code, "iso3c", "region")
+df$continent <- countrycode(df$Country.Code, "iso3c", "continent")
+
+df_oda_tot <- as.data.frame(apply(df[,3:41],2,sum))
+colnames(df_oda_tot)[1] <- "oda"
+df_oda_tot$year <- as.numeric(gsub("X","",rownames(df_oda_tot)))
+
+# ggplot(df_oda_tot, aes(y=oda, x=year)) + geom_line() +
+#   labs(x=NULL, y="Total ODA")
+
+df_melt <- melt(df[,3:43], id.vars=c("region","continent"), variable.name="year")
+df_melt$year <- as.numeric(gsub("X","",df_melt$year))
+df_melt <- aggregate(value ~ region + continent + year, data=df_melt, FUN="sum")
+
+df_melt$region <- factor(df_melt$region, levels=unique(df_melt[with(df_melt, order(continent, region)),]$region)) 
+
+mycol1 <- c(colorRampPalette(c("chocolate1", "chocolate4"))(5),
+           colorRampPalette(c("royalblue1", "royalblue4"))(4),
+           colorRampPalette(c("green1", "green4"))(5),
+           colorRampPalette(c("red1", "red4"))(2),
+           colorRampPalette(c("yellow1", "yellow3"))(3))
+
+p1 <- ggplot(df_melt, aes(y=value/1000000, x=year, fill=region, order=region)) + 
+  geom_bar(stat='identity') +
+  scale_fill_manual(values=mycol1) +
+  labs(x=NULL,y="ODA (millions of AUD)") +
+  guides(fill=guide_legend(ncol=4)) +
+  theme(legend.position="bottom",
+        legend.title=element_blank())
+
+df_region <- aggregate(df[,3:41], list(region = df$region, continent = df$continent), 
+                       sum)
+df_region_prop <- as.data.frame(prop.table(as.matrix(df_region[,3:41]), margin=2))
+df_region_prop$region <- df_region$region
+df_region_prop$continent <- df_region$continent
+
+df_region_prop_melt <- melt(df_region_prop, id.vars=c("region","continent"), variable.name="year")
+df_region_prop_melt$year <- as.numeric(gsub("X","",df_region_prop_melt$year))
+
+df_region_prop_melt$region <- factor(df_region_prop_melt$region, levels=unique(df_region_prop_melt[with(df_region_prop_melt, order(continent, region)),]$region)) 
+
+p2 <- ggplot(df_region_prop_melt, aes(y=value, x=year, fill=region, order=region)) + 
+  geom_bar(stat='identity') +
+  scale_fill_manual(values=mycol1) +
+  labs(x=NULL, y="Percentage of ODA") +
+  scale_y_continuous(label=percent) +
+  theme(legend.position="none")
+
+load("~/Documents/ex_dropbox/Kiva Research/anu_feb_2015/data/lender_loan_location_au_count_only_wt_activity_date.RData")
+
+lender_loan_location_au_count_only$year <- substr(lender_loan_location_au_count_only$funded_date, 1, 4)
+
+df_kiva <- aggregate(lender_loan_location_au_count_only$freq, 
+                     list(country=lender_loan_location_au_count_only$borrower_country_code,
+                            year = lender_loan_location_au_count_only$year), 
+                     FUN="sum")
+df_kiva$region <- countrycode(df_kiva$country, "iso2c", "region")
+df_kiva$continent <- countrycode(df_kiva$country, "iso2c", "continent")
+
+df_kiva_region <- aggregate(df_kiva$x, list(year=df_kiva$year, region=df_kiva$region, continent=df_kiva$continent), FUN="sum")
+
+df_kiva_region$region <- factor(df_kiva_region$region, levels=unique(df_kiva_region[with(df_kiva_region, order(continent, region)),]$region))
+
+mycol2 <- c("#FF7F24","#E2701F","#A85317","#8B4513",
+           colorRampPalette(c("royalblue1", "royalblue4"))(4),
+           colorRampPalette(c("green1", "green4"))(5),
+           colorRampPalette(c("red1", "red4"))(2),
+           colorRampPalette(c("yellow1", "yellow3"))(3))
+
+p3 <- ggplot(df_kiva_region, aes(y=x/1000, x=year, fill=region, order=region)) + 
+  geom_bar(stat='identity') +
+  labs(x=NULL, y="Loans (thousands)") +
+  scale_fill_manual(values=mycol2) +
+  theme(legend.position="none")
+
+require(reshape2)
+tmp <- dcast(df_kiva_region,  region + continent ~ year)
+tmp[is.na(tmp)] <- 0
+df_kiva_prop <- as.data.frame(prop.table(as.matrix(tmp[,3:12]),2))
+df_kiva_prop$region <- tmp$region
+df_kiva_prop$continent <- tmp$continent
+
+df_kiva_prop_melt <- melt(df_kiva_prop, id.vars=c("region","continent"),
+                          variable.name = "year")
+
+df_kiva_prop_melt$region <- factor(df_kiva_prop_melt$region, levels=unique(df_kiva_prop_melt[with(df_kiva_prop_melt, order(continent, region)),]$region))
+
+p4 <- ggplot(df_kiva_prop_melt, aes(y=value, x=year, fill=region, order=region)) + 
+  geom_bar(stat='identity') +
+  scale_fill_manual(values=mycol2) +
+  labs(x=NULL, y="Percentage of loans") +
+  scale_y_continuous(label=percent) +
+  theme(legend.position="none")
+
+df <- merge(df_kiva_prop, df_region_prop, by=c("region","continent"))
+
+regions <- df$region
+
+m <- as.matrix(df[,c("2005","2006","2007","2008","2009","2010","2011","2012","2013")]) -
+      as.matrix(df[,c("X2005","X2006","X2007","X2008","X2009","X2010","X2011","X2012","X2013")])
+df <- as.data.frame(m*100)
+rownames(df) <- regions
+```
+
+```{r}
+printbold1 <-
+function(x, which = NULL, each = c("column", "row"), max = TRUE,
+NA.string = "", type = c("latex", "html"),
+sanitize.text.function = force,
+sanitize.rownames.function = NULL,
+sanitize.colnames.function = NULL, ...)
+{
+stopifnot(inherits(x, "xtable"))
+each <- match.arg(each)
+type <- match.arg(type)
+digits <- rep(digits(x), length = ncol(x)+1)
+if (!is.null(which)) {
+stopifnot(nrow(which) == nrow(x))
+stopifnot(ncol(which) == ncol(x))
+boldmatrix <- which
+} else {
+boldmatrix <- matrix(FALSE, ncol = ncol(x), nrow = nrow(x))
+## round values before calculating max/min to avoid trivial diffs
+for (i in 1:ncol(x)) {
+if (!is.numeric(x[,i])) next
+x[,i] <- round(x[,i], digits = digits[i+1])
+}
+if (each == "column") {
+max <- rep(max, length = ncol(x))
+for (i in 1:ncol(x)) {
+xi <- x[,i]
+if (!is.numeric(xi)) next
+if (is.na(max[i])) next
+imax <- max(xi, na.rm = TRUE)
+if (!max[i])
+imax <- min(xi, na.rm = TRUE)
+boldmatrix[xi == imax, i] <- TRUE
+}
+} else if (each == "row") {
+max <- rep(max, length = nrow(x))
+for (i in 1:nrow(x)) {
+xi <- x[i,]
+ok <- sapply(xi, is.numeric)
+if (!any(ok)) next
+if (is.na(max[i])) next
+imax <- max(unlist(xi[ok]), na.rm = TRUE)
+if (!max[i])
+imax <- min(unlist(xi[ok]), na.rm = TRUE)
+whichmax <- sapply(xi, identical, imax)
+boldmatrix[i, whichmax] <- TRUE
+}
+}
+}
+## need to convert to character
+## only support per-column formats, not cell formats
+display <- rep(display(x), length = ncol(x)+1)
+for (i in 1:ncol(x)) {
+if (!is.numeric(x[,i])) next
+ina <- is.na(x[,i])
+x[,i] <- formatC(x[,i], digits = digits[i+1],
+format = display[i+1])
+x[ina, i] <- NA.string
+display(x)[i+1] <- "s"
+## embolden
+yes <- boldmatrix[,i]
+if (type == "latex") {
+x[yes,i] <- paste("\\textbf{", x[yes,i], "}", sep = "")
+} else {
+x[yes,i] <- paste("<strong>", x[yes,i], "</strong>", sep = "")
+}
+}
+print(x, ..., type = type, NA.string = NA.string,
+sanitize.text.function = sanitize.text.function,
+sanitize.rownames.function = sanitize.rownames.function,
+sanitize.colnames.function = sanitize.colnames.function,
+include.rownames=TRUE, size="footnotesize", rotate.colnames=FALSE,
+      floating.environment="table")
+} 
+```
+
+Difference in percentage points between distribution of Australian private lending and Australia Official development assistance. In the table above the maximum value of each column is emphasised. In the heatmap below cold colors indicate negative values, warm colors positive values.
+
+```{r, results = 'asis'}
+require(xtable)
+xtab <- xtable(df, label="tab:oda-kiva-region-distribution", digits=2)
+printbold1(xtab, type = 'html', each = "column", max = TRUE)
+```
+
+```{r, fig.height=4.5, fig.width=6.5}
+mlt <- melt(as.matrix(df))
+
+ggplot(mlt, aes(x=Var2, y=Var1, fill=value)) +
+  geom_tile(colour = "white",size=1.5) + 
+  labs(x=NULL, y=NULL) +
+  scale_fill_gradient2(high="red",mid="white",low="blue",midpoint=0) +
+  guides(fill=guide_legend(title="Difference\n(percentage points)"))
+```
+

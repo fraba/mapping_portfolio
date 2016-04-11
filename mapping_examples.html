@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Francesco Bailo" />
+
+<meta name="date" content="2016-04-11" />
+
+<title>Mapping examples</title>
+
+<script src="mapping_examples_files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="mapping_examples_files/bootstrap-3.3.5/css/united.min.css" rel="stylesheet" />
+<script src="mapping_examples_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="mapping_examples_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="mapping_examples_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="mapping_examples_files/highlight/default.css"
+      type="text/css" />
+<script src="mapping_examples_files/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script src="mapping_examples_files/navigation-1.0/tabsets.js"></script>
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+<h1 class="title">Mapping examples</h1>
+<h4 class="author"><em>Francesco Bailo</em></h4>
+<h4 class="date"><em>11 April 2016</em></h4>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#five-star-movemement">Five Star Movemement</a></li>
+<li><a href="#kiva.org-dataset">Kiva.org dataset</a></li>
+</ul>
+</div>
+
+<div id="five-star-movemement" class="section level1">
+<h1>Five Star Movemement</h1>
+<ul>
+<li><p><strong>Software</strong> Python, R, QGIS</p></li>
+<li><p><strong>Source</strong> <a href="http://www.meetup.com/meetup_api/">meetup.com/meetup_api</a>, <a href="http://www.istat.it/">istat.it</a>, <a href="http://elezioni.interno.it/opendata.html">elezioni.interno.it/opendata.html</a></p></li>
+<li><p><strong>API Parsing script</strong> <a href="https://github.com/fraba/meetup_api_python">github.com/fraba/meetup_api_python</a></p></li>
+<li><p><strong>File format</strong> JSON, CSV</p></li>
+<li><p><strong>Meetup user records</strong> 97,808</p></li>
+<li><p><strong>Municipalities records</strong> 8072</p></li>
+<li><p><strong>Voting records</strong> 90,096 (Number of votes by municipality and party)</p></li>
+<li><p><strong>Geolocated people for density analysis</strong> 59,394,207</p></li>
+<li><p><strong>Geolocated votes for density analysis</strong> 27,371,747</p></li>
+</ul>
+<p>By comparing the data on the distribution of the resident population in Italy and the number of members added by the Five Star Movement to its meetups in four periods, we can visualise where and when membership grew faster than expected given the density of the resident population in that area. In the figures below, each dot represents a member who registered on Meetup.com in that period. The association between membership and the resident population is indicated in red if the number of members in that area is higher than expected, blue if lower than expected and white if as expected given the density of the population in the same area.</p>
+<p><img src="mapping_examples_files/figure-html/unnamed-chunk-1-1.png" title="" alt="" width="768" /></p>
+<p>In the map below we compare the density of the membership of the Five Star Movement, with the density of the votes the movement received in the 2014 European Parliament election. This time each dot represents 1000 votes casted for the Five Star Movements. The number of members did not translate in a proportional number of votes in all the major cities (which of course attract the highest number of members) with the notable exception of Turin.</p>
+<p><img src="mapping_examples_files/figure-html/unnamed-chunk-2-1.png" title="" alt="" width="768" /></p>
+</div>
+<div id="kiva.org-dataset" class="section level1">
+<h1>Kiva.org dataset</h1>
+<ul>
+<li><p><strong>Software</strong> Python, SQLite, R, QGIS</p></li>
+<li><p><strong>Source</strong> <a href="http://build.kiva.org/">build.kiva.org</a></p></li>
+<li><p><strong>File format</strong> JSON</p></li>
+<li><p><strong>Processing script</strong> <a href="https://github.com/fraba/Kiva-JSON-Snapshot-to-SQLite">github.com/fraba/Kiva-JSON-Snapshot-to-SQLite</a></p></li>
+<li><p><strong>Loan records</strong> 784,081</p></li>
+<li><p><strong>Location records</strong> 784,081</p></li>
+<li><p><strong>Lender records</strong> 961,970</p></li>
+<li><p><strong>Loan-lender relation records</strong> 17,014,065</p></li>
+</ul>
+<p>Where are the  Australian lenders?</p>
+<p><img src="mapping_examples_files/figure-html/unnamed-chunk-4-1.png" title="" alt="" width="960" /></p>
+<p>Difference in percentage points between distribution of Australian private lending and Australia Official development assistance. In the table above the maximum value of each column is emphasised. In the heatmap below cold colors indicate negative values, warm colors positive values.</p>
+<!-- html table generated in R 3.2.3 by xtable 1.8-2 package -->
+<!-- Mon Apr 11 15:00:39 2016 -->
+<table border="1">
+<tr>
+<th>
+</th>
+<th>
+2005
+</th>
+<th>
+2006
+</th>
+<th>
+2007
+</th>
+<th>
+2008
+</th>
+<th>
+2009
+</th>
+<th>
+2010
+</th>
+<th>
+2011
+</th>
+<th>
+2012
+</th>
+<th>
+2013
+</th>
+</tr>
+<tr>
+<td align="right">
+Caribbean
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+-0.10
+</td>
+<td align="right">
+1.48
+</td>
+<td align="right">
+2.12
+</td>
+<td align="right">
+1.19
+</td>
+<td align="right">
+0.60
+</td>
+<td align="right">
+0.52
+</td>
+<td align="right">
+0.80
+</td>
+<td align="right">
+0.93
+</td>
+</tr>
+<tr>
+<td align="right">
+Central America
+</td>
+<td align="right">
+30.87
+</td>
+<td align="right">
+14.94
+</td>
+<td align="right">
+10.29
+</td>
+<td align="right">
+6.95
+</td>
+<td align="right">
+7.52
+</td>
+<td align="right">
+9.32
+</td>
+<td align="right">
+9.78
+</td>
+<td align="right">
+9.43
+</td>
+<td align="right">
+10.17
+</td>
+</tr>
+<tr>
+<td align="right">
+Central Asia
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+3.79
+</td>
+<td align="right">
+6.44
+</td>
+<td align="right">
+6.27
+</td>
+<td align="right">
+4.11
+</td>
+<td align="right">
+5.19
+</td>
+<td align="right">
+4.76
+</td>
+<td align="right">
+4.83
+</td>
+</tr>
+<tr>
+<td align="right">
+Eastern Africa
+</td>
+<td align="right">
+<strong>48.82</strong>
+</td>
+<td align="right">
+<strong>35.80</strong>
+</td>
+<td align="right">
+11.75
+</td>
+<td align="right">
+11.76
+</td>
+<td align="right">
+7.17
+</td>
+<td align="right">
+10.41
+</td>
+<td align="right">
+12.03
+</td>
+<td align="right">
+8.17
+</td>
+<td align="right">
+9.49
+</td>
+</tr>
+<tr>
+<td align="right">
+Eastern Asia
+</td>
+<td align="right">
+-4.26
+</td>
+<td align="right">
+-2.84
+</td>
+<td align="right">
+-2.69
+</td>
+<td align="right">
+-2.74
+</td>
+<td align="right">
+0.45
+</td>
+<td align="right">
+1.47
+</td>
+<td align="right">
+1.55
+</td>
+<td align="right">
+1.02
+</td>
+<td align="right">
+1.90
+</td>
+</tr>
+<tr>
+<td align="right">
+Eastern Europe
+</td>
+<td align="right">
+6.25
+</td>
+<td align="right">
+10.88
+</td>
+<td align="right">
+2.81
+</td>
+<td align="right">
+1.61
+</td>
+<td align="right">
+1.33
+</td>
+<td align="right">
+0.80
+</td>
+<td align="right">
+0.73
+</td>
+<td align="right">
+0.51
+</td>
+<td align="right">
+0.74
+</td>
+</tr>
+<tr>
+<td align="right">
+Melanesia
+</td>
+<td align="right">
+-40.37
+</td>
+<td align="right">
+-32.12
+</td>
+<td align="right">
+-30.74
+</td>
+<td align="right">
+-33.59
+</td>
+<td align="right">
+-26.28
+</td>
+<td align="right">
+-30.78
+</td>
+<td align="right">
+-27.91
+</td>
+<td align="right">
+-26.57
+</td>
+<td align="right">
+-26.12
+</td>
+</tr>
+<tr>
+<td align="right">
+Middle Africa
+</td>
+<td align="right">
+-0.09
+</td>
+<td align="right">
+-0.03
+</td>
+<td align="right">
+0.56
+</td>
+<td align="right">
+0.50
+</td>
+<td align="right">
+0.51
+</td>
+<td align="right">
+0.69
+</td>
+<td align="right">
+0.99
+</td>
+<td align="right">
+2.29
+</td>
+<td align="right">
+0.92
+</td>
+</tr>
+<tr>
+<td align="right">
+Northern America
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+0.31
+</td>
+<td align="right">
+0.39
+</td>
+<td align="right">
+0.35
+</td>
+<td align="right">
+0.35
+</td>
+<td align="right">
+0.52
+</td>
+</tr>
+<tr>
+<td align="right">
+Polynesia
+</td>
+<td align="right">
+-2.99
+</td>
+<td align="right">
+-0.43
+</td>
+<td align="right">
+6.65
+</td>
+<td align="right">
+0.17
+</td>
+<td align="right">
+-0.64
+</td>
+<td align="right">
+-2.37
+</td>
+<td align="right">
+-2.42
+</td>
+<td align="right">
+-1.53
+</td>
+<td align="right">
+-1.72
+</td>
+</tr>
+<tr>
+<td align="right">
+South America
+</td>
+<td align="right">
+12.34
+</td>
+<td align="right">
+7.37
+</td>
+<td align="right">
+<strong>14.62</strong>
+</td>
+<td align="right">
+<strong>18.75</strong>
+</td>
+<td align="right">
+<strong>18.68</strong>
+</td>
+<td align="right">
+<strong>22.07</strong>
+</td>
+<td align="right">
+<strong>19.57</strong>
+</td>
+<td align="right">
+<strong>19.17</strong>
+</td>
+<td align="right">
+<strong>15.06</strong>
+</td>
+</tr>
+<tr>
+<td align="right">
+South-Eastern Asia
+</td>
+<td align="right">
+-33.20
+</td>
+<td align="right">
+-24.57
+</td>
+<td align="right">
+-19.20
+</td>
+<td align="right">
+-19.23
+</td>
+<td align="right">
+-13.30
+</td>
+<td align="right">
+-13.20
+</td>
+<td align="right">
+-13.76
+</td>
+<td align="right">
+-14.49
+</td>
+<td align="right">
+-15.69
+</td>
+</tr>
+<tr>
+<td align="right">
+Southern Africa
+</td>
+<td align="right">
+-0.75
+</td>
+<td align="right">
+-0.71
+</td>
+<td align="right">
+-0.35
+</td>
+<td align="right">
+-0.31
+</td>
+<td align="right">
+-0.28
+</td>
+<td align="right">
+-0.32
+</td>
+<td align="right">
+-0.50
+</td>
+<td align="right">
+-0.21
+</td>
+<td align="right">
+-0.33
+</td>
+</tr>
+<tr>
+<td align="right">
+Southern Asia
+</td>
+<td align="right">
+-9.12
+</td>
+<td align="right">
+-7.94
+</td>
+<td align="right">
+-3.67
+</td>
+<td align="right">
+-7.44
+</td>
+<td align="right">
+-8.59
+</td>
+<td align="right">
+-12.63
+</td>
+<td align="right">
+-13.83
+</td>
+<td align="right">
+-14.22
+</td>
+<td align="right">
+-12.23
+</td>
+</tr>
+<tr>
+<td align="right">
+Southern Europe
+</td>
+<td align="right">
+0.00
+</td>
+<td align="right">
+-0.02
+</td>
+<td align="right">
+-0.00
+</td>
+<td align="right">
+0.76
+</td>
+<td align="right">
+0.09
+</td>
+<td align="right">
+-0.00
+</td>
+<td align="right">
+-0.00
+</td>
+<td align="right">
+0.34
+</td>
+<td align="right">
+0.69
+</td>
+</tr>
+<tr>
+<td align="right">
+Western Africa
+</td>
+<td align="right">
+-0.08
+</td>
+<td align="right">
+18.94
+</td>
+<td align="right">
+13.90
+</td>
+<td align="right">
+16.50
+</td>
+<td align="right">
+18.01
+</td>
+<td align="right">
+10.20
+</td>
+<td align="right">
+6.86
+</td>
+<td align="right">
+6.78
+</td>
+<td align="right">
+6.83
+</td>
+</tr>
+<tr>
+<td align="right">
+Western Asia
+</td>
+<td align="right">
+-2.73
+</td>
+<td align="right">
+-15.65
+</td>
+<td align="right">
+-5.98
+</td>
+<td align="right">
+1.65
+</td>
+<td align="right">
+-9.84
+</td>
+<td align="right">
+1.90
+</td>
+<td align="right">
+5.83
+</td>
+<td align="right">
+7.16
+</td>
+<td align="right">
+7.28
+</td>
+</tr>
+<a name=tab:oda-kiva-region-distribution></a>
+</table>
+<p><img src="mapping_examples_files/figure-html/unnamed-chunk-8-1.png" title="" alt="" width="624" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
